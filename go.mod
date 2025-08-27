@@ -4,6 +4,7 @@ go 1.24.5
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.3
+	github.com/gorilla/mux v1.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 )
