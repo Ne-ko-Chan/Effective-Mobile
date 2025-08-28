@@ -8,7 +8,7 @@ import (
 )
 
 type SubscriptionStore interface {
-	GetSumPeriod(from, to time.Time, uuid, serviceName string) (int, error)
+	GetSumPeriod(from, to, uuid, serviceName string) (int, error)
 	GetSubscriptionByID(id int) (*Subscription, error)
 	GetSubscriptions() ([]Subscription, error)
 	CreateSubscription(s Subscription) error
