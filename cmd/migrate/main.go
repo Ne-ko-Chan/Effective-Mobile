@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.Print("Performing migrations...")
 	db, err := db.NewPSQLStorage(config.Envs.ConnString)
 	if err != nil {
 		log.Fatal(err)
@@ -45,4 +46,26 @@ func main() {
 		}
 	}
 
+	if cmd == "newest" {
+		for {
+			if err := m.Up(); err != nil {
+				if err == migrate.ErrNoChange {
+					break
+				}
+				log.Fatal(err)
+			}
+		}
+	}
+
+	if cmd == "oldest" {
+		for {
+			if err := m.Down(); err != nil {
+				if err == migrate.ErrNoChange {
+					break
+				}
+				log.Fatal(err)
+			}
+		}
+	}
+	log.Println("Migrations applied successfully")
 }

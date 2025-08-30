@@ -16,6 +16,10 @@ type SubscriptionStore interface {
 	DeleteSubscription(id int) error
 }
 
+type SubscriptionResponse interface {
+	MyPrint()
+}
+
 type Subscription struct {
 	ID          int          `json:"id"`
 	ServiceName string       `json:"service_name"`
@@ -23,6 +27,29 @@ type Subscription struct {
 	UserID      string       `json:"user_id"`
 	StartDate   time.Time    `json:"start_date"`
 	EndDate     sql.NullTime `json:"end_date"`
+}
+
+type SubscriptionResponseNoEnd struct {
+	ID          int        `json:"id"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	UserID      string     `json:"user_id"`
+	StartDate   CustomTime `json:"start_date"`
+}
+
+func (s SubscriptionResponseNoEnd) MyPrint() {
+}
+
+type SubscriptionResponseWithEnd struct {
+	ID          int        `json:"id"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	UserID      string     `json:"user_id"`
+	StartDate   CustomTime `json:"start_date"`
+	EndDate     CustomTime `json:"end_date"`
+}
+
+func (s SubscriptionResponseWithEnd) MyPrint() {
 }
 
 // TODO: check out more validate options
@@ -50,7 +77,7 @@ type DeleteSubscriptionPayload struct {
 type CustomTime time.Time
 
 func (t CustomTime) MarshalJSON() ([]byte, error) {
-	return fmt.Appendf(nil, "%s", time.Time(t).Format("01-2006")), nil
+	return fmt.Appendf(nil, "\"%s\"", time.Time(t).Format("01-2006")), nil
 }
 
 func (t *CustomTime) UnmarshalJSON(data []byte) error {

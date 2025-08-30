@@ -13,5 +13,8 @@ migration:
 migrate-up:
 	@go run cmd/migrate/main.go up
 
+migrate-newest:
+	@go run cmd/migrate/main.go newest
+
 migrate-down:
 	@go run cmd/migrate/main.go down

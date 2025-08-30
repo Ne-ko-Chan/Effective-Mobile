@@ -58,14 +58,15 @@ func (h *Handler) handleReadSubscription(w http.ResponseWriter, r *http.Request)
 		log.Println("ERROR: ", err)
 		return
 	}
+	log.Println("Requested subscription id=",id)
 	sub, err := h.store.GetSubscriptionByID(int(id))
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		log.Println("ERROR: ", err)
 		return
 	}
+	utils.WriteJSON(w, http.StatusOK, utils.SubscriptionToSubscriptionResponse(sub))
 	log.Println("READ subscription handler finished gracefully")
-	utils.WriteJSON(w, http.StatusOK, *sub)
 }
 
 func (h *Handler) handleListSubscriptions(w http.ResponseWriter, _ *http.Request) {
@@ -76,8 +77,8 @@ func (h *Handler) handleListSubscriptions(w http.ResponseWriter, _ *http.Request
 		log.Println("ERROR: ", err)
 		return
 	}
+	utils.WriteJSON(w, http.StatusOK, utils.SubscriptionSliceToSubscriptionResponse(subs))
 	log.Println("LIST subscriptions handler finished gracefully")
-	utils.WriteJSON(w, http.StatusOK, subs)
 }
 
 func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -108,8 +109,8 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	log.Println("CREATE subscription handler finished gracefully")
 	utils.WriteJSON(w, http.StatusCreated, nil)
+	log.Println("CREATE subscription handler finished gracefully")
 }
 
 func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -139,8 +140,8 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 		log.Println("ERROR: database operation failed: ", err)
 		return
 	}
-	log.Println("UPDATE subscription handler finished gracefully")
 	utils.WriteJSON(w, http.StatusOK, nil)
+	log.Println("UPDATE subscription handler finished gracefully")
 }
 
 func (h *Handler) handleDeleteSubscription(w http.ResponseWriter, r *http.Request) {
@@ -161,8 +162,8 @@ func (h *Handler) handleDeleteSubscription(w http.ResponseWriter, r *http.Reques
 		log.Println("ERROR: database operation failed: ", err)
 		return
 	}
-	log.Println("DELETE subscription handler finished gracefully")
 	utils.WriteJSON(w, http.StatusOK, nil)
+	log.Println("DELETE subscription handler finished gracefully")
 }
 
 func (h *Handler) handleGetSum(w http.ResponseWriter, r *http.Request) {

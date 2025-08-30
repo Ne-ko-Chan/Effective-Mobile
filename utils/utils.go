@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"rest-service/types"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -41,4 +42,33 @@ func ParseAndValidatePayload(r *http.Request, payload any) error {
 	}
 
 	return nil
+}
+
+func SubscriptionToSubscriptionResponse(s *types.Subscription) types.SubscriptionResponse {
+	if s.EndDate.Valid {
+		return types.SubscriptionResponseWithEnd{
+			ID:          s.ID,
+			UserID:      s.UserID,
+			ServiceName: s.ServiceName,
+			Price:       s.Price,
+			StartDate:   types.CustomTime(s.StartDate),
+			EndDate:     types.CustomTime(s.EndDate.Time),
+		}
+	} else {
+		return types.SubscriptionResponseNoEnd{
+			ID:          s.ID,
+			UserID:      s.UserID,
+			ServiceName: s.ServiceName,
+			Price:       s.Price,
+			StartDate:   types.CustomTime(s.StartDate),
+		}
+	}
+}
+
+func SubscriptionSliceToSubscriptionResponse(subs []types.Subscription) []types.SubscriptionResponse {
+	res := make([]types.SubscriptionResponse, len(subs))
+	for i := range res {
+		res[i] = SubscriptionToSubscriptionResponse(&subs[i])
+	}
+	return res
 }

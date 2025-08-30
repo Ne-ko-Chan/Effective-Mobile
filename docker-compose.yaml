@@ -11,6 +11,8 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - ../dbdata:/var/lib/postgresql/data
+    networks:
+      - db-network
     deploy:
       resources:
         limits:
@@ -24,6 +26,57 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
+      start_interval: 5s
     restart: unless-stopped
     tty: true
     stdin_open: true
+
+  migrations:
+    build:
+      context: .
+      dockerfile: ./cmd/migrate/Dockerfile
+    command: go run cmd/migrate/main.go newest
+    container_name: migrations
+    networks:
+      - db-network
+    environment:
+        DB_HOST: postgres
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_NAME: ${DB_NAME}
+        DB_SSLMODE: disable
+        DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  my_service:
+    build: ./
+    container_name: service
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+        - db-network
+    environment:
+        DB_HOST: postgres
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_NAME: ${DB_NAME}
+        DB_SSLMODE: disable
+        DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  db-network:
+    driver: bridge
