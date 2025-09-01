@@ -293,6 +293,7 @@ components:
         user_id:
           type: string
           description: The UUID of the user
+          example: "9876d5d2-7f70-4375-9d41-07183b9a75e9"
         start_date:
           $ref: '#/components/schemas/CustomTime'
         end_date:
@@ -315,6 +316,7 @@ components:
           format: int64
         user_id:
           type: string
+          example: "9876d5d2-7f70-4375-9d41-07183b9a75e9"
         start_date:
           $ref: '#/components/schemas/CustomTime'
         end_date:
@@ -358,11 +360,11 @@ components:
         - id: 1
           service_name: "Netflix"
           price: 15
-          user_id: "user-123"
+          user_id: "2ecde80c-c846-431c-9793-f1c0a1ac5869"
           start_date: "01-2015"
           end_date: "05-2015"
         - id: 2
           service_name: "Spotify"
           price: 10
-          user_id: "user-456"
+          user_id: "2ecde80c-c846-431c-9793-f1c0a1ac5869"
           start_date: "02-2024"
