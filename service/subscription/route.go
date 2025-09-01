@@ -58,10 +58,15 @@ func (h *Handler) handleReadSubscription(w http.ResponseWriter, r *http.Request)
 		log.Println("ERROR: ", err)
 		return
 	}
-	log.Println("Requested subscription id=",id)
+	log.Println("Requested subscription id=", id)
 	sub, err := h.store.GetSubscriptionByID(int(id))
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, err)
+		if err.Error() == "there is no subscription with requested id" {
+			utils.WriteError(w, http.StatusNotFound, err)
+			log.Println("ERROR: database operation failed: ", err)
+			return
+		}
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		log.Println("ERROR: ", err)
 		return
 	}
@@ -69,12 +74,11 @@ func (h *Handler) handleReadSubscription(w http.ResponseWriter, r *http.Request)
 	log.Println("READ subscription handler finished gracefully")
 }
 
-
 func (h *Handler) handleListSubscriptions(w http.ResponseWriter, _ *http.Request) {
 	log.Println("Started LIST subscriptions handler")
 	subs, err := h.store.GetSubscriptions()
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		log.Println("ERROR: ", err)
 		return
 	}
@@ -105,7 +109,7 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 		},
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		log.Println("ERROR: database operation failed: ", err)
 		return
 	}
@@ -114,12 +118,22 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 	log.Println("CREATE subscription handler finished gracefully")
 }
 
-
 func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started UPDATE subscription handler")
 
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("id parameter was not provided"))
+		return
+	}
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("given id parameter is malformed: %v", err))
+		return
+	}
+
 	var payload types.UpdateSubscriptionPayload
-	err := utils.ParseAndValidatePayload(r, &payload)
+	err = utils.ParseAndValidatePayload(r, &payload)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		log.Println("ERROR: ", err)
@@ -127,7 +141,7 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 	}
 	log.Println("Recieved payload is valid, updating database entry")
 	err = h.store.UpdateSubscription(types.Subscription{
-		ID:          payload.ID,
+		ID:          int(id),
 		UserID:      payload.UserID,
 		ServiceName: payload.ServiceName,
 		Price:       payload.Price,
@@ -138,7 +152,12 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 		},
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		if err.Error() == "there is no subscription with requested id" {
+			utils.WriteError(w, http.StatusNotFound, err)
+			log.Println("ERROR: database operation failed: ", err)
+			return
+		}
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		log.Println("ERROR: database operation failed: ", err)
 		return
 	}
@@ -148,19 +167,25 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 
 func (h *Handler) handleDeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started DELETE subscription handler")
-
-	var payload types.DeleteSubscriptionPayload
-	err := utils.ParseAndValidatePayload(r, &payload)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		log.Println("ERROR: ", err)
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("id parameter was not provided"))
 		return
 	}
-	log.Println("Recieved payload is valid, updating database entry")
-
-	err = h.store.DeleteSubscription(payload.ID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("given id parameter is malformed: %v", err))
+		return
+	}
+
+	err = h.store.DeleteSubscription(int(id))
+	if err != nil {
+		if err.Error() == "there is no subscription with requested id" {
+			utils.WriteError(w, http.StatusNotFound, err)
+			log.Println("ERROR: database operation failed: ", err)
+			return
+		}
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		log.Println("ERROR: database operation failed: ", err)
 		return
 	}

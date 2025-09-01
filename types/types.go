@@ -66,7 +66,6 @@ type CreateSubscriptionPayload struct {
 }
 
 type UpdateSubscriptionPayload struct {
-	ID          int        `json:"id"              validate:"required"`
 	ServiceName string `json:"service_name" validate:"required"`
 	Price int `json:"price"        validate:"required"`
 	UserID string `json:"user_id"      validate:"required"`
@@ -74,9 +73,6 @@ type UpdateSubscriptionPayload struct {
 	EndDate CustomTime `json:"end_date"`
 }
 
-type DeleteSubscriptionPayload struct {
-	ID int `json:"id" validate:"required"`
-}
 
 type CustomTime time.Time
 
