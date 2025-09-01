@@ -17,7 +17,12 @@ type SubscriptionStore interface {
 }
 
 type SubscriptionResponse interface {
-	MyPrint()
+	// Needed only to distinguish interfaces
+	SubscriptionResponseMethod()
+}
+
+type Error struct {
+	Error string `json:"error"`
 }
 
 type Subscription struct {
@@ -30,44 +35,43 @@ type Subscription struct {
 }
 
 type SubscriptionResponseNoEnd struct {
-	ID          int        `json:"id"`
-	ServiceName string     `json:"service_name"`
-	Price       int        `json:"price"`
-	UserID      string     `json:"user_id"`
-	StartDate   CustomTime `json:"start_date"`
+	ID int `json:"id"`
+	ServiceName string `json:"service_name"`
+	Price int `json:"price"`
+	UserID string `json:"user_id"`
+	StartDate CustomTime `json:"start_date"`
 }
 
-func (s SubscriptionResponseNoEnd) MyPrint() {
+func (s SubscriptionResponseNoEnd) SubscriptionResponseMethod() {
 }
 
 type SubscriptionResponseWithEnd struct {
-	ID          int        `json:"id"`
-	ServiceName string     `json:"service_name"`
-	Price       int        `json:"price"`
-	UserID      string     `json:"user_id"`
-	StartDate   CustomTime `json:"start_date"`
-	EndDate     CustomTime `json:"end_date"`
+	ID int `json:"id"`
+	ServiceName string `json:"service_name"`
+	Price int `json:"price"`
+	UserID string `json:"user_id"`
+	StartDate CustomTime `json:"start_date"`
+	EndDate CustomTime `json:"end_date"`
 }
 
-func (s SubscriptionResponseWithEnd) MyPrint() {
+func (s SubscriptionResponseWithEnd) SubscriptionResponseMethod() {
 }
 
-// TODO: check out more validate options
 type CreateSubscriptionPayload struct {
-	ServiceName string     `json:"service_name" validate:"required"`
-	Price       int        `json:"price"        validate:"required"`
-	UserID      string     `json:"user_id"      validate:"required"`
-	StartDate   CustomTime `json:"start_date"   validate:"required"`
-	EndDate     CustomTime `json:"end_date"`
+	ServiceName string `json:"service_name" validate:"required"`
+	Price int `json:"price"        validate:"required"`
+	UserID string `json:"user_id"      validate:"required"`
+	StartDate CustomTime `json:"start_date"   validate:"required"`
+	EndDate CustomTime `json:"end_date"`
 }
 
 type UpdateSubscriptionPayload struct {
-	ID          int        `json:"id" validate:"required"`
-	ServiceName string     `json:"service_name"    validate:"required"`
-	Price       int        `json:"price"           validate:"required"`
-	UserID      string     `json:"user_id"         validate:"required"`
-	StartDate   CustomTime `json:"start_date"      validate:"required"`
-	EndDate     CustomTime `json:"end_date"`
+	ID          int        `json:"id"              validate:"required"`
+	ServiceName string `json:"service_name" validate:"required"`
+	Price int `json:"price"        validate:"required"`
+	UserID string `json:"user_id"      validate:"required"`
+	StartDate CustomTime `json:"start_date"   validate:"required"`
+	EndDate CustomTime `json:"end_date"`
 }
 
 type DeleteSubscriptionPayload struct {

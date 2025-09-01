@@ -61,13 +61,14 @@ func (h *Handler) handleReadSubscription(w http.ResponseWriter, r *http.Request)
 	log.Println("Requested subscription id=",id)
 	sub, err := h.store.GetSubscriptionByID(int(id))
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		utils.WriteError(w, http.StatusNotFound, err)
 		log.Println("ERROR: ", err)
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, utils.SubscriptionToSubscriptionResponse(sub))
 	log.Println("READ subscription handler finished gracefully")
 }
+
 
 func (h *Handler) handleListSubscriptions(w http.ResponseWriter, _ *http.Request) {
 	log.Println("Started LIST subscriptions handler")
@@ -112,6 +113,7 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 	utils.WriteJSON(w, http.StatusCreated, nil)
 	log.Println("CREATE subscription handler finished gracefully")
 }
+
 
 func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started UPDATE subscription handler")
