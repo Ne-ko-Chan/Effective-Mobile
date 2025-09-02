@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"rest-service/types"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -71,4 +72,19 @@ func SubscriptionSliceToSubscriptionResponse(subs []types.Subscription) []types.
 		res[i] = SubscriptionToSubscriptionResponse(&subs[i])
 	}
 	return res
+}
+
+func GetIdQueryParameter(w http.ResponseWriter, r *http.Request) (int, error) {
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		err := fmt.Errorf("id parameter was not provided")
+		return 0, err
+	}
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("given id parameter is malformed: %v", err)
+		return 0, err
+	}
+
+	return int(id), nil
 }

@@ -121,14 +121,9 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started UPDATE subscription handler")
 
-	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("id parameter was not provided"))
-		return
-	}
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := utils.GetIdQueryParameter(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("given id parameter is malformed: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -139,7 +134,7 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 		log.Println("ERROR: ", err)
 		return
 	}
-	log.Println("Recieved payload is valid, updating database entry")
+	log.Println("Recieved payload is valid, updating database entry with id=", id)
 	err = h.store.UpdateSubscription(types.Subscription{
 		ID:          int(id),
 		UserID:      payload.UserID,
@@ -167,14 +162,9 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 
 func (h *Handler) handleDeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started DELETE subscription handler")
-	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("id parameter was not provided"))
-		return
-	}
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := utils.GetIdQueryParameter(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("given id parameter is malformed: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
