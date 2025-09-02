@@ -9,11 +9,12 @@ import (
 
 type SubscriptionStore interface {
 	GetSumPeriod(from, to, uuid, serviceName string) (int, error)
-	GetSubscriptionByID(id int) (*Subscription, error)
-	GetSubscriptions() ([]Subscription, error)
+	GetSubscriptionsByUserID(userID string) ([]Subscription, error)
+	GetSubscriptionsByServiceName(service_name string) ([]Subscription, error)
+	GetSubscriptionByUserIDServiceName(userID, service_name string) (*Subscription, error)
 	CreateSubscription(s Subscription) error
 	UpdateSubscription(s Subscription) error
-	DeleteSubscription(id int) error
+	DeleteSubscription(userID, service_name string) error
 }
 
 type SubscriptionResponse interface {
@@ -26,7 +27,6 @@ type Error struct {
 }
 
 type Subscription struct {
-	ID          int          `json:"id"`
 	ServiceName string       `json:"service_name"`
 	Price       int          `json:"price"`
 	UserID      string       `json:"user_id"`
@@ -35,44 +35,39 @@ type Subscription struct {
 }
 
 type SubscriptionResponseNoEnd struct {
-	ID int `json:"id"`
-	ServiceName string `json:"service_name"`
-	Price int `json:"price"`
-	UserID string `json:"user_id"`
-	StartDate CustomTime `json:"start_date"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	UserID      string     `json:"user_id"`
+	StartDate   CustomTime `json:"start_date"`
 }
 
 func (s SubscriptionResponseNoEnd) SubscriptionResponseMethod() {
 }
 
 type SubscriptionResponseWithEnd struct {
-	ID int `json:"id"`
-	ServiceName string `json:"service_name"`
-	Price int `json:"price"`
-	UserID string `json:"user_id"`
-	StartDate CustomTime `json:"start_date"`
-	EndDate CustomTime `json:"end_date"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	UserID      string     `json:"user_id"`
+	StartDate   CustomTime `json:"start_date"`
+	EndDate     CustomTime `json:"end_date"`
 }
 
 func (s SubscriptionResponseWithEnd) SubscriptionResponseMethod() {
 }
 
 type CreateSubscriptionPayload struct {
-	ServiceName string `json:"service_name" validate:"required"`
-	Price int `json:"price"        validate:"required"`
-	UserID string `json:"user_id"      validate:"required"`
-	StartDate CustomTime `json:"start_date"   validate:"required"`
-	EndDate CustomTime `json:"end_date"`
+	ServiceName string     `json:"service_name" validate:"required"`
+	Price       int        `json:"price"        validate:"required"`
+	UserID      string     `json:"user_id"      validate:"required"`
+	StartDate   CustomTime `json:"start_date"   validate:"required"`
+	EndDate     CustomTime `json:"end_date"`
 }
 
 type UpdateSubscriptionPayload struct {
-	ServiceName string `json:"service_name" validate:"required"`
-	Price int `json:"price"        validate:"required"`
-	UserID string `json:"user_id"      validate:"required"`
+	Price     int        `json:"price"        validate:"required"`
 	StartDate CustomTime `json:"start_date"   validate:"required"`
-	EndDate CustomTime `json:"end_date"`
+	EndDate   CustomTime `json:"end_date"`
 }
-
 
 type CustomTime time.Time
 

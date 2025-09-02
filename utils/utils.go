@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"rest-service/types"
-	"strconv"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -48,7 +47,6 @@ func ParseAndValidatePayload(r *http.Request, payload any) error {
 func SubscriptionToSubscriptionResponse(s *types.Subscription) types.SubscriptionResponse {
 	if s.EndDate.Valid {
 		return types.SubscriptionResponseWithEnd{
-			ID:          s.ID,
 			UserID:      s.UserID,
 			ServiceName: s.ServiceName,
 			Price:       s.Price,
@@ -57,7 +55,6 @@ func SubscriptionToSubscriptionResponse(s *types.Subscription) types.Subscriptio
 		}
 	} else {
 		return types.SubscriptionResponseNoEnd{
-			ID:          s.ID,
 			UserID:      s.UserID,
 			ServiceName: s.ServiceName,
 			Price:       s.Price,
@@ -74,17 +71,17 @@ func SubscriptionSliceToSubscriptionResponse(subs []types.Subscription) []types.
 	return res
 }
 
-func GetIdQueryParameter(w http.ResponseWriter, r *http.Request) (int, error) {
-	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		err := fmt.Errorf("id parameter was not provided")
-		return 0, err
+
+func ParseValidateUserIDServiceName(r *http.Request) (string, string, error) {
+	query := r.URL.Query()
+	userID := query.Get("user_id")
+	serviceName := query.Get("service_name")
+	if userID == "" {
+		return "", "", fmt.Errorf("no user_id query parameter provided")
 	}
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		err = fmt.Errorf("given id parameter is malformed: %v", err)
-		return 0, err
+	if serviceName == "" {
+		return "", "", fmt.Errorf("no service_name query parameter provided")
 	}
 
-	return int(id), nil
+	return userID, serviceName, nil
 }

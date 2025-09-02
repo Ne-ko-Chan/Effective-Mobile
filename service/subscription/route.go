@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"rest-service/types"
 	"rest-service/utils"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -30,60 +29,55 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 }
 
 func (h *Handler) handleGetSubscriptions(w http.ResponseWriter, r *http.Request) {
+	log.Println("Started GET subscriptions handler")
 	query := r.URL.Query()
-	listFlag := query.Get("list")
-	if listFlag == "" || listFlag == "false" {
-		h.handleReadSubscription(w, r)
-		return
-	}
-	if listFlag == "true" {
-		h.handleListSubscriptions(w, r)
-		return
-	}
-	utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("incorrect value of list parameter. Must be bool if present. If not present, defaults to 'false'"))
-}
-
-func (h *Handler) handleReadSubscription(w http.ResponseWriter, r *http.Request) {
-	log.Println("Started READ subscription handler")
-	query := r.URL.Query()
-	subscriptionID := query.Get("id")
-	if subscriptionID == "" {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no id query parameter specified"))
-		log.Println("ERROR: no id query parameter specified")
-		return
-	}
-	id, err := strconv.ParseInt(subscriptionID, 10, 64)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		log.Println("ERROR: ", err)
-		return
-	}
-	log.Println("Requested subscription id=", id)
-	sub, err := h.store.GetSubscriptionByID(int(id))
-	if err != nil {
-		if err.Error() == "there is no subscription with requested id" {
+	userID := query.Get("user_id")
+	serviceName := query.Get("service_name")
+	if serviceName != "" && userID != "" {
+		log.Printf("Requested subscription with user_id=%s and service_name=%s\n", userID, serviceName)
+		sub, err := h.store.GetSubscriptionByUserIDServiceName(userID, serviceName)
+		if err != nil {
+			log.Println("ERROR: ", err)
 			utils.WriteError(w, http.StatusNotFound, err)
-			log.Println("ERROR: database operation failed: ", err)
 			return
 		}
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		log.Println("ERROR: ", err)
-		return
-	}
-	utils.WriteJSON(w, http.StatusOK, utils.SubscriptionToSubscriptionResponse(sub))
-	log.Println("READ subscription handler finished gracefully")
-}
 
-func (h *Handler) handleListSubscriptions(w http.ResponseWriter, _ *http.Request) {
-	log.Println("Started LIST subscriptions handler")
-	subs, err := h.store.GetSubscriptions()
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		log.Println("ERROR: ", err)
+		utils.WriteJSON(w, http.StatusOK, utils.SubscriptionToSubscriptionResponse(sub))
+		log.Println("GET subscription handler finished gracefully")
 		return
 	}
-	utils.WriteJSON(w, http.StatusOK, utils.SubscriptionSliceToSubscriptionResponse(subs))
-	log.Println("LIST subscriptions handler finished gracefully")
+
+	if serviceName != "" {
+		log.Printf("Requested subscriptions with service_name=%s\n", serviceName)
+		subs, err := h.store.GetSubscriptionsByServiceName(serviceName)
+		if err != nil {
+			log.Println("ERROR: ", err)
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		utils.WriteJSON(w, http.StatusOK, utils.SubscriptionSliceToSubscriptionResponse(subs))
+		log.Println("GET subscription handler finished gracefully")
+		return
+	}
+
+	if userID != "" {
+		log.Printf("Requested subscriptions with user_id=%s\n", userID)
+		subs, err := h.store.GetSubscriptionsByUserID(userID)
+		if err != nil {
+			log.Println("ERROR: ", err)
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		utils.WriteJSON(w, http.StatusOK, utils.SubscriptionSliceToSubscriptionResponse(subs))
+		log.Println("GET subscription handler finished gracefully")
+		return
+	}
+
+	err := fmt.Errorf("no user_id and service_name parameters provided")
+	log.Println("ERROR: ", err)
+	utils.WriteError(w, http.StatusBadRequest, err)
 }
 
 func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +115,7 @@ func (h *Handler) handleCreateSubscription(w http.ResponseWriter, r *http.Reques
 func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started UPDATE subscription handler")
 
-	id, err := utils.GetIdQueryParameter(w, r)
+	userID, serviceName, err := utils.ParseValidateUserIDServiceName(r)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
@@ -134,11 +128,10 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 		log.Println("ERROR: ", err)
 		return
 	}
-	log.Println("Recieved payload is valid, updating database entry with id=", id)
+	log.Printf("Recieved payload is valid, updating database entry with user_id=%s and service_name=%s", userID, serviceName)
 	err = h.store.UpdateSubscription(types.Subscription{
-		ID:          int(id),
-		UserID:      payload.UserID,
-		ServiceName: payload.ServiceName,
+		UserID:      userID,
+		ServiceName: serviceName,
 		Price:       payload.Price,
 		StartDate:   time.Time(payload.StartDate),
 		EndDate: sql.NullTime{
@@ -162,13 +155,13 @@ func (h *Handler) handleUpdateSubscription(w http.ResponseWriter, r *http.Reques
 
 func (h *Handler) handleDeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	log.Println("Started DELETE subscription handler")
-	id, err := utils.GetIdQueryParameter(w, r)
+	userID, serviceName, err := utils.ParseValidateUserIDServiceName(r)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	err = h.store.DeleteSubscription(int(id))
+	err = h.store.DeleteSubscription(userID, serviceName)
 	if err != nil {
 		if err.Error() == "there is no subscription with requested id" {
 			utils.WriteError(w, http.StatusNotFound, err)

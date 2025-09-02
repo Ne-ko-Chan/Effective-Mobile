@@ -28,7 +28,7 @@ func (s *Store) GetSumPeriod(from, to, uuid, serviceName string) (int, error) {
 			return 0, err
 		}
 		params = append(params, t)
-		queryEnd = append(queryEnd, fmt.Sprintf("start_date >= $%d",paramCount))
+		queryEnd = append(queryEnd, fmt.Sprintf("start_date >= $%d", paramCount))
 	}
 
 	if to != "" {
@@ -38,7 +38,7 @@ func (s *Store) GetSumPeriod(from, to, uuid, serviceName string) (int, error) {
 			return 0, err
 		}
 		params = append(params, t)
-		queryEnd = append(queryEnd, fmt.Sprintf("start_date <= $%d",paramCount))
+		queryEnd = append(queryEnd, fmt.Sprintf("start_date <= $%d", paramCount))
 	}
 
 	if uuid != "" {
@@ -74,30 +74,8 @@ func (s *Store) GetSumPeriod(from, to, uuid, serviceName string) (int, error) {
 	}
 }
 
-func (s *Store) GetSubscriptionByID(id int) (*types.Subscription, error) {
-	row := s.db.QueryRow("SELECT id, user_id, service_name, price, start_date, end_date FROM subscriptions WHERE id = $1", id)
-
-	var sub types.Subscription
-	err := row.Scan(
-		&sub.ID,
-		&sub.UserID,
-		&sub.ServiceName,
-		&sub.Price,
-		&sub.StartDate,
-		&sub.EndDate,
-	)
-	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			return nil, fmt.Errorf("there is no subscription with requested id")
-		}
-		return nil, err
-	}
-
-	return &sub, nil
-}
-
-func (s *Store) GetSubscriptions() ([]types.Subscription, error) {
-	rows, err := s.db.Query("SELECT id, user_id, service_name, price, start_date, end_date FROM subscriptions")
+func (s *Store) GetSubscriptionsByUserID(userID string) ([]types.Subscription, error) {
+	rows, err := s.db.Query("SELECT user_id, service_name, price, start_date, end_date FROM subscriptions WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +84,6 @@ func (s *Store) GetSubscriptions() ([]types.Subscription, error) {
 	var sub types.Subscription
 	for rows.Next() {
 		err = rows.Scan(
-			&sub.ID,
 			&sub.UserID,
 			&sub.ServiceName,
 			&sub.Price,
@@ -114,13 +91,60 @@ func (s *Store) GetSubscriptions() ([]types.Subscription, error) {
 			&sub.EndDate,
 		)
 		if err != nil {
-			return  nil, err
+			return nil, err
 		}
 		subscriptions = append(subscriptions, sub)
 	}
 
 	return subscriptions, nil
 }
+
+func (s *Store) GetSubscriptionsByServiceName(serviceName string) ([]types.Subscription, error) {
+	rows, err := s.db.Query("SELECT user_id, service_name, price, start_date, end_date FROM subscriptions WHERE service_name = $1", serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	var subscriptions []types.Subscription
+	var sub types.Subscription
+	for rows.Next() {
+		err = rows.Scan(
+			&sub.UserID,
+			&sub.ServiceName,
+			&sub.Price,
+			&sub.StartDate,
+			&sub.EndDate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		subscriptions = append(subscriptions, sub)
+	}
+
+	return subscriptions, nil
+}
+
+func (s *Store) GetSubscriptionByUserIDServiceName(userID, serviceName string) (*types.Subscription, error) {
+	row := s.db.QueryRow("SELECT user_id, service_name, price, start_date, end_date FROM subscriptions WHERE user_id = $1 AND service_name = $2", userID, serviceName)
+
+	var sub types.Subscription
+	err := row.Scan(
+		&sub.UserID,
+		&sub.ServiceName,
+		&sub.Price,
+		&sub.StartDate,
+		&sub.EndDate,
+	)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, fmt.Errorf("there is no subscription with requested user_id and service_name")
+		}
+		return nil, err
+	}
+
+	return &sub, nil
+}
+
 
 func (s *Store) CreateSubscription(sub types.Subscription) error {
 	if !sub.EndDate.Valid {
@@ -138,17 +162,17 @@ func (s *Store) CreateSubscription(sub types.Subscription) error {
 }
 
 func (s *Store) UpdateSubscription(sub types.Subscription) error {
-	_, err := s.GetSubscriptionByID(sub.ID)
+	_, err := s.GetSubscriptionByUserIDServiceName(sub.UserID, sub.ServiceName)
 	if err != nil {
 		return err
 	}
 	if !sub.EndDate.Valid {
-		_, err := s.db.Exec("UPDATE subscriptions SET user_id=$1, service_name=$2, price=$3, start_date=$4 WHERE id=$5", sub.UserID, sub.ServiceName, sub.Price, sub.StartDate, sub.ID)
+		_, err := s.db.Exec("UPDATE subscriptions SET user_id=$1, service_name=$2, price=$3, start_date=$4 WHERE user_id=$5 AND service_name = $6", sub.UserID, sub.ServiceName, sub.Price, sub.StartDate, sub.UserID, sub.ServiceName)
 		if err != nil {
 			return err
 		}
 	} else {
-		_, err := s.db.Exec("UPDATE subscriptions SET user_id=$1, service_name=$2, price=$3, start_date=$4, end_date=$5 WHERE id=$6", sub.UserID, sub.ServiceName, sub.Price, sub.StartDate, sub.EndDate, sub.ID)
+		_, err := s.db.Exec("UPDATE subscriptions SET user_id=$1, service_name=$2, price=$3, start_date=$4, end_date=$5 WHERE user_id=$6 AND service_name = $7", sub.UserID, sub.ServiceName, sub.Price, sub.StartDate, sub.EndDate, sub.UserID, sub.ServiceName)
 		if err != nil {
 			return err
 		}
@@ -156,12 +180,12 @@ func (s *Store) UpdateSubscription(sub types.Subscription) error {
 	return nil
 }
 
-func (s *Store) DeleteSubscription(id int) error {
-	_, err := s.GetSubscriptionByID(id)
+func (s *Store) DeleteSubscription(userID, serviceName string) error {
+	_, err := s.GetSubscriptionByUserIDServiceName(userID, serviceName)
 	if err != nil {
 		return err
 	}
-	_, err = s.db.Exec("DELETE FROM subscriptions WHERE id=$1", id)
+	_, err = s.db.Exec("DELETE FROM subscriptions WHERE user_id=$1 AND service_name = $2", userID, serviceName)
 	if err != nil {
 		return err
 	}

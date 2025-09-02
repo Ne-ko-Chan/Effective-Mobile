@@ -10,21 +10,20 @@ paths:
   /subscriptions:
     get:
       summary: Get subscriptions
-      description: Returns either a single subscription or list of subscriptions based on query parameters. If single subscription is requested the id parameter needs to be present and list parameter needs to be false. Otherwise, the list parameter needs to be set to true
+      description: Returns either a single subscription or list of subscriptions based on query parameters. If only one of user_id or service_name parameters present, returns a list of subscriptions, if both -- single subscription
       operationId: getSubscriptions
       parameters:
-        - name: list
+        - name: user_id
           in: query
-          description: If true, returns list of all subscriptions, otherwise requires an id parameter and returns information about subscription with given id. If not present, defaults to false.
+          description: UUID of a user of subscription
           schema:
-            type: boolean
+            type: string
           required: false
-        - name: id
+        - name: service_name
           in: query
-          description: ID of a specific subscription to retrieve
+          description: Name of a service user is subscribed to
           schema:
-            type: integer
-            format: int64
+            type: string
           required: false
       responses:
         '200':
@@ -94,16 +93,21 @@ paths:
 
     put:
       summary: Update a subscription
-      description: Updates the database entry with given id.
+      description: Updates the database entry with given user_id and service_name.
       operationId: updateSubscription
       parameters:
-          - name: id
-            in: query
-            description: The ID of the subscription to update
-            required: true
-            schema:
-              type: integer
-              format: int64
+        - name: user_id
+          in: query
+          description: UUID of a user of subscription
+          schema:
+            type: string
+          required: false
+        - name: service_name
+          in: query
+          description: Name of a service user is subscribed to
+          schema:
+            type: string
+          required: false
       requestBody:
         required: true
         content:
@@ -140,16 +144,21 @@ paths:
 
     delete:
       summary: Delete a subscription
-      description: Deletes a database entry with given id
+      description: Deletes a database entry with given user_id and service_name
       operationId: deleteSubscription
       parameters:
-        - name: id
+        - name: user_id
           in: query
-          description: The ID of the subscription to delete
-          required: true
+          description: UUID of a user of subscription
           schema:
-            type: integer
-            format: int64
+            type: string
+          required: false
+        - name: service_name
+          in: query
+          description: Name of a service user is subscribed to
+          schema:
+            type: string
+          required: false
       responses:
         '200':
           description: Subscription deleted successfully
@@ -181,7 +190,7 @@ paths:
   /subscriptions/sum:
     get:
       summary: Get subscriptions sum
-      description: Returns a sum of subscriptions from given time period. There is an option for filtering subscriptions by user td and service name.
+      description: Returns a sum of subscriptions from given time period. There is an option for filtering subscriptions by user_id and service_name.
       operationId: getSubscriptionsSum
       parameters:
         - name: from
@@ -281,34 +290,23 @@ components:
     UpdateSubscriptionRequest:
       type: object
       properties:
-        service_name:
-          type: string
-          description: The name of the service
-          example: "Kinopoisk"
         price:
           type: integer
           format: int64
           description: The price of the subscription
           example: 299
-        user_id:
-          type: string
-          description: The UUID of the user
-          example: "9876d5d2-7f70-4375-9d41-07183b9a75e9"
         start_date:
           $ref: '#/components/schemas/CustomTime'
         end_date:
           $ref: '#/components/schemas/CustomTime'
       required:
-        - id
+        - price
+        - start_date
 
     SubscriptionResponse:
       type: object
       description: The response, containing single subscription's data
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 1
         service_name:
           type: string
         price:
@@ -348,7 +346,6 @@ components:
     SingleSubscriptionExample:
       summary: Example of a single subscription response
       value:
-        id: 1
         service_name: "Netflix"
         price: 15
         user_id: "user-123"
@@ -357,14 +354,12 @@ components:
     MultipleSubscriptionsExample:
       summary: Example of multiple subscriptions response
       value:
-        - id: 1
-          service_name: "Netflix"
+        - service_name: "Netflix"
           price: 15
           user_id: "2ecde80c-c846-431c-9793-f1c0a1ac5869"
           start_date: "01-2015"
           end_date: "05-2015"
-        - id: 2
-          service_name: "Spotify"
+        - service_name: "Spotify"
           price: 10
           user_id: "2ecde80c-c846-431c-9793-f1c0a1ac5869"
           start_date: "02-2024"
